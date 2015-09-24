@@ -17,7 +17,8 @@ The configuration file is in YAML format. The following entries are supported.
 - templates: Template files. (String or list)
 - files: Additional files that the executable will need. (String or list)
 - executable: The (full) path to the executable that should be run.
-- params: Additional parameters passed to the executable. (String or list)
+- cmdargs: Additional command-line arguments passed to the executable. (String
+  or list)
 - parameters: A list of parameters that should be varied.
 - dependencies: Additional dependent variables. These are python expressions
   evaluated at runtime.
@@ -47,7 +48,7 @@ behaviour that makes writing regexps difficult.
     templates: file.inp
     files: file.dat
     executable: /path/to/binary
-    params: -2D -mixed
+    cmdargs: -2D -mixed
     parameters:
       degree:
         - 1

@@ -84,11 +84,11 @@ if __name__ == '__main__':
 
     coerce_list(setup, 'templates')
     coerce_list(setup, 'files')
-    coerce_list(setup, 'params', split=' ')
+    coerce_list(setup, 'cmdargs', split=' ')
     if 'dependencies' not in setup:
         setup['dependencies'] = {}
 
-    basic_args = [setup['executable']] + setup['params']
+    basic_args = [setup['executable']] + setup['cmdargs']
 
     regexps = [re.compile(r) for r in setup['parse']]
     results = []
@@ -114,7 +114,6 @@ if __name__ == '__main__':
             print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
                                          for var in setup['parameters']) + ' ...')
             args = [interpolate_vars(arg, namespace) for arg in basic_args]
-            print(args)
             output = subprocess.check_output(args, cwd=path).decode()
 
             result = {}
