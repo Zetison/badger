@@ -25,6 +25,9 @@ The configuration file is in YAML format. The following entries are supported.
 - parse: Regular expressions for searching in stdout. Python regexp syntax. Each
   defined group will end up in the output.
 
+Most of these are optional, but `executable`, `parameters` and `parse` must be
+present.
+
 ## Behaviour
 
 For each tuple of parameters, the dependent variables are computed.
@@ -48,20 +51,11 @@ behaviour that makes writing regexps difficult.
     templates: file.inp
     files: file.dat
     executable: /path/to/binary
-    cmdargs: -2D -mixed
+    cmdargs: -2D -mixed file.inp
     parameters:
-      degree:
-        - 1
-        - 2
-        - 3
-      elements:
-        - 8
-        - 16
-        - 32
-      timestep:
-        - 0.1
-        - 0.05
-        - 0.025
+      degree: [1, 2, 3]
+      elements: [8, 16, 32]
+      timestep: [0.1, 0.05, 0.025]
     dependencies:
       raiseorder: degree - 1
       refineu: elements//8 - 1
@@ -78,5 +72,6 @@ index changes most quickly). Additional output formats are planned.
 
 ## TODO
 
+- Support typed output.
 - More output formats (e.g. runnable Python/Matlab code, CSV, pure text).
 - Easy access to commonly used regexps.
