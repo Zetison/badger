@@ -14,12 +14,11 @@ Python 3 and PyYAML.
 
 The configuration file is in YAML format. The following entries are supported.
 
-- template: A template input file.
-- files: A list of additional files that the executable will need.
+- templates: Template files. (String or list)
+- files: Additional files that the executable will need. (String or list)
 - executable: The (full) path to the executable that should be run.
-- params: Additional parameters passed to the executable. Can be a list or a
-  string.
-- parameters: A list of parameters that should be varied
+- params: Additional parameters passed to the executable. (String or list)
+- parameters: A list of parameters that should be varied.
 - dependencies: Additional dependent variables. These are python expressions
   evaluated at runtime.
 - parse: Regular expressions for searching in stdout. Python regexp syntax. Each
@@ -27,9 +26,10 @@ The configuration file is in YAML format. The following entries are supported.
 
 ## Behaviour
 
-For each tuple of parameters, the dependent variables are computed, and the
-input file is constructed by replacing each occurence of `$var` in the template
-with the corresponding value of the parameter or dependent variable `var`.
+For each tuple of parameters, the dependent variables are computed.
+
+Then, in each template file and each command-line parameter, the variables
+`$var` are substituted with the actual value of `var`.
 
 The actual computation is performed in a temporary directory which is
 automatically deleted.
@@ -44,9 +44,8 @@ combination.
 Note the use of `!!str` and single quotes to avoid miscellaneous string
 behaviour that makes writing regexps difficult.
 
-    template: file.inp
-    files:
-      - file.dat
+    templates: file.inp
+    files: file.dat
     executable: /path/to/binary
     params: -2D -mixed
     parameters:
@@ -78,7 +77,5 @@ index changes most quickly). Additional output formats are planned.
 
 ## TODO
 
-- Accept multiple template files.
-- More flexible definition of command to run.
 - More output formats (e.g. runnable Python/Matlab code, CSV, pure text).
 - Easy access to commonly used regexps.
