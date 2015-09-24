@@ -23,7 +23,7 @@ The configuration file is in YAML format. The following entries are supported.
 - dependencies: Additional dependent variables. These are python expressions
   evaluated at runtime.
 - parse: Regular expressions for searching in stdout. Python regexp syntax. Each
-  defined group will end up in the output.
+  defined group will end up in the output. (String or list)
 
 Most of these are optional, but `executable`, `parameters` and `parse` must be
 present.
