@@ -62,18 +62,28 @@ def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
+def coerce_list(dictionary, key, split=None):
+    if not key in dictionary:
+        dictionary[key] = []
+    if isinstance(dictionary[key], str):
+        if split:
+            dictionary[key] = dictionary[key].split(split)
+        else:
+            dictionary[key] = [dictionary[key]]
+
 if __name__ == '__main__':
     setup_file = sys.argv[1]
 
     with open(setup_file, 'r') as f:
         setup = ordered_load(f, yaml.SafeLoader)
 
-    args = [setup['executable']]
-    if isinstance(setup['params'], list):
-        args.extend(setup['params'])
-    elif isinstance(setup['params'], str):
-        args.extend(setup['params'].split(' '))
-    args.append(setup['template'])
+    coerce_list(setup, 'templates')
+    coerce_list(setup, 'files')
+    coerce_list(setup, 'params', split=' ')
+    if 'dependencies' not in setup:
+        setup['dependencies'] = {}
+
+    args = [setup['executable']] + setup['params']
 
     regexps = [re.compile(r) for r in setup['parse']]
     results = []
@@ -83,20 +93,23 @@ if __name__ == '__main__':
         for name, expr in setup['dependencies'].items():
             namespace[name] = eval(str(expr), {}, namespace)
 
-        with open(setup['template'], 'r') as f:
-            xinp = f.read()
-        for name, value in namespace.items():
-            xinp = xinp.replace('$' + name, str(value))
+        templates = {}
+        for fn in setup['templates']:
+            with open(fn, 'r') as f:
+                data = f.read()
+            for name, value in namespace.items():
+                data = data.replace('$' + name, str(value))
+            templates[fn] = data
 
         with tempfile.TemporaryDirectory() as path:
-            with open(join(path, setup['template']), 'w') as f:
-                f.write(xinp)
+            for fn, data in templates.items():
+                with open(join(path, fn), 'w') as f:
+                    f.write(data)
             for fn in setup['files']:
                 shutil.copy(fn, join(path, fn))
 
             print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
                                          for var in setup['parameters']) + ' ...')
-
             output = subprocess.check_output(args, cwd=path).decode()
 
             result = {}
