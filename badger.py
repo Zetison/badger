@@ -44,6 +44,7 @@ import tempfile
 import shutil
 import subprocess
 import re
+import argparse
 
 from socket import gethostname
 from datetime import datetime
@@ -85,11 +86,63 @@ def coerce_types(dictionary, types):
         if key in types:
             dictionary[key] = type_map[types[key]](val)
 
+def output_yaml(data, types, fn):
+    with open(fn, 'w') as f:
+        yaml.dump(data, f, default_flow_style=False)
+
+def output_py(data, types, fn):
+    code = """from numpy import zeros
+
+metadata = {'hostname': '%(hostname)s',
+            'time': '%(time)s'}
+""" % {'hostname': data['metadata']['hostname'],
+       'time': data['metadata']['time']}
+
+    def fmt(v):
+        if isinstance(v, str):
+            return "'%s'" % v
+        return str(v)
+
+    size = []
+    for p in data['parameters']:
+        code += '{} = [{}]\n'.format(p['name'], ', '.join(fmt(d) for d in p['values']))
+        size.append(len(p['values']))
+    size = '({})'.format(', '.join(str(s) for s in size))
+
+    for k, vals in data['results'].items():
+        code += '{} = zeros({}, dtype={})\n'.format(k, size, types[k])
+        code += '{}.flat[:] = [\n'.format(k)
+        for v in vals:
+            code += '    {},\n'.format(fmt(v))
+        code += ']\n'.format(size)
+
+    with open(fn, 'w') as f:
+        f.write(code)
+
 
 if __name__ == '__main__':
-    setup_file = sys.argv[1]
+    FORMATS = {
+        'yaml': output_yaml,
+        'py': output_py,
+    }
 
-    with open(setup_file, 'r') as f:
+    parser = argparse.ArgumentParser(description='Batch job runner.')
+    parser.add_argument('-o', '--output', required=False, default='output.yaml',
+                        help='The output file')
+    parser.add_argument('-f', '--format', required=False, default=None,
+                        choices=FORMATS, help='The output format')
+    parser.add_argument('file', help='Configuration file for the batch job')
+    args = parser.parse_args()
+
+    if args.format is None:
+        try:
+            args.format = args.output.split('.')[-1]
+            assert args.format in FORMATS
+        except (AssertionError, IndexError):
+            print('Unable to determine output format from filename "{}"'.format(args.output))
+            sys.exit(1)
+
+    with open(args.file, 'r') as f:
         setup = ordered_load(f, yaml.SafeLoader)
 
     coerce_list(setup, 'templates')
@@ -100,7 +153,7 @@ if __name__ == '__main__':
         if key not in setup:
             setup[key] = {}
 
-    basic_args = [setup['executable']] + setup['cmdargs']
+    basic_cmdargs = [setup['executable']] + setup['cmdargs']
 
     regexps = [re.compile(r) for r in setup['parse']]
     results = []
@@ -125,8 +178,8 @@ if __name__ == '__main__':
 
             print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
                                          for var in setup['parameters']) + ' ...')
-            args = [interpolate_vars(arg, namespace) for arg in basic_args]
-            output = subprocess.check_output(args, cwd=path).decode()
+            cmdargs = [interpolate_vars(arg, namespace) for arg in basic_cmdargs]
+            output = subprocess.check_output(cmdargs, cwd=path).decode()
 
             result = {}
             for r in regexps:
@@ -140,8 +193,9 @@ if __name__ == '__main__':
             print('  ' + ', '.join('{}={}'.format(*t) for t in result.items()))
 
     all_output = set().union(*results)
-
-    # TODO: implement alternative output formats
+    for out in all_output:
+        if out not in setup['types']:
+            setup['types']['out'] = 'str'
 
     final = {
         'metadata': {
@@ -154,5 +208,4 @@ if __name__ == '__main__':
                     for output in all_output},
     }
 
-    with open('output.yaml', 'w') as f:
-        yaml.dump(final, f, default_flow_style=False)
+    FORMATS[args.format](final, setup['types'], args.output)

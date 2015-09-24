@@ -4,7 +4,10 @@ A simple batch runner tool. (BATCH runnER)
 
 ## Usage
 
-    badger.py config.yaml
+    badger.py [-h] [-o OUTPUT] [-f FORMAT] file
+
+Supported formats are `yaml` and `py`. If the format is not specified, it is
+determined from the output extension, which is `output.yaml` by default.
 
 ## Dependencies
 
@@ -73,10 +76,11 @@ behaviour that makes writing regexps difficult.
 
 ## Output
 
-The output is in `output.yaml`. The data is listed in row-major order (the last
-index changes most quickly). Additional output formats are planned.
+The output file and format is given by the input arguments to Badger. When
+applicable, the data is listed in row-major order (the last index changes most
+quickly).
 
 ## TODO
 
-- More output formats (e.g. runnable Python/Matlab code, CSV, pure text).
+- More output formats (e.g. Matlab, CSV, pure text).
 - Easy access to commonly used regexps.
