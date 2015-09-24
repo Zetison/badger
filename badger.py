@@ -76,6 +76,16 @@ def interpolate_vars(string, namespace):
         string = string.replace('$' + name, str(value))
     return string
 
+def coerce_types(dictionary, types):
+    type_map = {'float': float,
+                'str': str,
+                'int': int,
+                'bool': bool}
+    for key, val in dictionary.items():
+        if key in types:
+            dictionary[key] = type_map[types[key]](val)
+
+
 if __name__ == '__main__':
     setup_file = sys.argv[1]
 
@@ -86,8 +96,9 @@ if __name__ == '__main__':
     coerce_list(setup, 'files')
     coerce_list(setup, 'cmdargs', split=' ')
     coerce_list(setup, 'parse')
-    if 'dependencies' not in setup:
-        setup['dependencies'] = {}
+    for key in ['dependencies', 'types']:
+        if key not in setup:
+            setup[key] = {}
 
     basic_args = [setup['executable']] + setup['cmdargs']
 
@@ -123,6 +134,7 @@ if __name__ == '__main__':
                 for m in r.finditer(output): pass
                 if m:
                     result.update(m.groupdict())
+            coerce_types(result, setup['types'])
             results.append(result)
 
             print('  ' + ', '.join('{}={}'.format(*t) for t in result.items()))

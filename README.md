@@ -24,6 +24,8 @@ The configuration file is in YAML format. The following entries are supported.
   evaluated at runtime.
 - parse: Regular expressions for searching in stdout. Python regexp syntax. Each
   defined group will end up in the output. (String or list)
+- types: Defines the expected types for each output group. Valid types are `int`,
+  `float`, `bool` and `str`. Default is `str`.
 
 Most of these are optional, but `executable`, `parameters` and `parse` must be
 present.
@@ -64,6 +66,10 @@ behaviour that makes writing regexps difficult.
     parse:
       - !!str 'Relative \|p-p\^h\|_l2 : (?P<p_rel_l2>[^\s]+)'
       - !!str 'Total time\s+\|\s+(?P<cpu_time>[^\s]+)\s+\|\s+(?P<wall_time>[^\s]+)'
+    types:
+      p_rel_l2: float
+      cpu_time: float
+      wall_time: float
 
 ## Output
 
@@ -72,6 +78,5 @@ index changes most quickly). Additional output formats are planned.
 
 ## TODO
 
-- Support typed output.
 - More output formats (e.g. runnable Python/Matlab code, CSV, pure text).
 - Easy access to commonly used regexps.
