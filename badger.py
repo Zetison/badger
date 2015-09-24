@@ -71,6 +71,11 @@ def coerce_list(dictionary, key, split=None):
         else:
             dictionary[key] = [dictionary[key]]
 
+def interpolate_vars(string, namespace):
+    for name, value in namespace.items():
+        string = string.replace('$' + name, str(value))
+    return string
+
 if __name__ == '__main__':
     setup_file = sys.argv[1]
 
@@ -83,7 +88,7 @@ if __name__ == '__main__':
     if 'dependencies' not in setup:
         setup['dependencies'] = {}
 
-    args = [setup['executable']] + setup['params']
+    basic_args = [setup['executable']] + setup['params']
 
     regexps = [re.compile(r) for r in setup['parse']]
     results = []
@@ -97,9 +102,7 @@ if __name__ == '__main__':
         for fn in setup['templates']:
             with open(fn, 'r') as f:
                 data = f.read()
-            for name, value in namespace.items():
-                data = data.replace('$' + name, str(value))
-            templates[fn] = data
+            templates[fn] = interpolate_vars(data, namespace)
 
         with tempfile.TemporaryDirectory() as path:
             for fn, data in templates.items():
@@ -110,6 +113,8 @@ if __name__ == '__main__':
 
             print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
                                          for var in setup['parameters']) + ' ...')
+            args = [interpolate_vars(arg, namespace) for arg in basic_args]
+            print(args)
             output = subprocess.check_output(args, cwd=path).decode()
 
             result = {}
