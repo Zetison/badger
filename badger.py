@@ -91,7 +91,7 @@ def output_yaml(data, types, fn):
         yaml.dump(data, f, default_flow_style=False)
 
 def output_py(data, types, fn):
-    code = """from numpy import zeros
+    code = """from numpy import array, zeros
 
 metadata = {'hostname': '%(hostname)s',
             'time': '%(time)s'}
@@ -105,16 +105,13 @@ metadata = {'hostname': '%(hostname)s',
 
     size = []
     for p in data['parameters']:
-        code += '{} = [{}]\n'.format(p['name'], ', '.join(fmt(d) for d in p['values']))
+        code += '{} = array([{}])\n'.format(p['name'], ', '.join(fmt(d) for d in p['values']))
         size.append(len(p['values']))
     size = '({})'.format(', '.join(str(s) for s in size))
 
     for k, vals in data['results'].items():
         code += '{} = zeros({}, dtype={})\n'.format(k, size, types[k])
-        code += '{}.flat[:] = [\n'.format(k)
-        for v in vals:
-            code += '    {},\n'.format(fmt(v))
-        code += ']\n'.format(size)
+        code += '{}.flat[:] = [{}]\n'.format(k, ', '.join(fmt(v) for v in vals))
 
     with open(fn, 'w') as f:
         f.write(code)
