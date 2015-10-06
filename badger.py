@@ -52,19 +52,26 @@ from itertools import product
 from collections import OrderedDict
 from os.path import join
 
+# YAML is unordered by default, this is an ordered loader
+# Thanks http://stackoverflow.com/a/21912744/2729168
+
+
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
     class OrderedLoader(Loader):
         pass
+
     def construct_mapping(loader, node):
         loader.flatten_mapping(node)
         return object_pairs_hook(loader.construct_pairs(node))
+
     OrderedLoader.add_constructor(
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
+
 def coerce_list(dictionary, key, split=None):
-    if not key in dictionary:
+    if key not in dictionary:
         dictionary[key] = []
     if isinstance(dictionary[key], str):
         if split:
@@ -72,10 +79,12 @@ def coerce_list(dictionary, key, split=None):
         else:
             dictionary[key] = [dictionary[key]]
 
+
 def interpolate_vars(string, namespace):
     for name, value in namespace.items():
         string = string.replace('$' + name, str(value))
     return string
+
 
 def coerce_types(dictionary, types):
     type_map = {'float': float,
@@ -86,9 +95,11 @@ def coerce_types(dictionary, types):
         if key in types:
             dictionary[key] = type_map[types[key]](val)
 
+
 def output_yaml(data, types, fn):
     with open(fn, 'w') as f:
         yaml.dump(data, f, default_flow_style=False)
+
 
 def output_py(data, types, fn):
     code = """from numpy import array, zeros
@@ -182,7 +193,8 @@ if __name__ == '__main__':
             result = {}
             for r in regexps:
                 m = None
-                for m in r.finditer(output): pass
+                for m in r.finditer(output):
+                    pass
                 if m:
                     result.update(m.groupdict())
             coerce_types(result, setup['types'])
