@@ -200,7 +200,7 @@ if __name__ == '__main__':
             coerce_types(result, setup['types'])
             results.append(result)
 
-            print('  ' + ', '.join('{}={}'.format(*t) for t in result.items()))
+            print('  ' + ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
 
     all_output = set().union(*results)
     for out in all_output:
