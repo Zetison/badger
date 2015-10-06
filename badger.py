@@ -145,12 +145,13 @@ if __name__ == '__main__':
     coerce_list(setup, 'templates')
     coerce_list(setup, 'files')
     coerce_list(setup, 'cmdargs', split=' ')
+    coerce_list(setup, 'executable', split=' ')
     coerce_list(setup, 'parse')
     for key in ['dependencies', 'types']:
         if key not in setup:
             setup[key] = {}
 
-    basic_cmdargs = [setup['executable']] + setup['cmdargs']
+    basic_cmdargs = setup['executable'] + setup['cmdargs']
 
     regexps = [re.compile(r) for r in setup['parse']]
     results = []
