@@ -4,6 +4,7 @@ import sys
 import yaml
 
 from collections import OrderedDict
+from jinja2 import Template
 
 import badger.output as output
 
@@ -70,6 +71,11 @@ def load_setup(fn):
     for key in ['dependencies', 'types', 'parameters']:
         if key not in setup:
             setup[key] = {}
+
+    kwargs = {'variable_start_string': '$',
+              'variable_end_string': '$'}
+    for k in ['templates', 'files', 'executable', 'cmdargs']:
+        setup[k] = [Template(v, **kwargs) for v in setup[k]]
 
     for key in setup['dependencies']:
         setup['dependencies'][key] = str(setup['dependencies'][key])

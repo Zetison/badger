@@ -1,5 +1,6 @@
 from nose.tools import raises, assert_raises
 from collections import OrderedDict
+from operator import methodcaller
 
 from badger import input
 
@@ -47,6 +48,9 @@ class TestSetup:
 
     def test_minimal(self):
         setup = input.load_setup('tests/test_input_minimal.yaml')
+        for k in ['executable']:
+            setup[k] = list(map(methodcaller('render'), setup[k]))
+
         assert setup['executable'] == ['alpha', 'bravo', 'charlie']
         for k in ['templates', 'files', 'cmdargs', 'parse']:
             assert setup[k] == []
@@ -55,6 +59,9 @@ class TestSetup:
 
     def test_basic(self):
         setup = input.load_setup('tests/test_input_basic.yaml')
+        for k in ['templates', 'files', 'executable', 'cmdargs']:
+            setup[k] = list(map(methodcaller('render'), setup[k]))
+
         assert setup['templates'] == ['alpha bravo']
         assert setup['files'] == ['one', 'two', 'three']
         assert setup['executable'] == [r'charlie \n delta', 'echo']

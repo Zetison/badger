@@ -9,7 +9,7 @@ class TestCall:
             cmdargs=['a=$alpha', 'b=$bravo', 'c=$charlie'],
             parameters=OrderedDict([('alpha', [2, 4]), ('bravo', ['a', 'b'])]),
             dependencies=OrderedDict([('charlie', 'alpha**2')]),
-            parse=['^(?P<out>.*)$'],
+            parse=['(?P<out>.+)'],
         )
         stuff = badger.work(input.parse_args(['foo']), setup)
         assert stuff['results']['out'] == [

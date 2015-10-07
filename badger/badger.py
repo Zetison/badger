@@ -47,6 +47,8 @@ from socket import gethostname
 from datetime import datetime
 from itertools import product
 from os.path import join
+from operator import methodcaller
+from jinja2 import Environment, FileSystemLoader
 
 from badger import output, input
 
@@ -67,6 +69,26 @@ def coerce_types(dictionary, types):
             dictionary[key] = type_map[types[key]](val)
 
 
+def build_namespace(setup, parameters):
+    namespace = dict(zip(setup['parameters'], parameters))
+    for name, expr in setup['dependencies'].items():
+        namespace[name] = eval(expr, {}, namespace)
+    return namespace
+
+
+def render_files(templates, namespace):
+    env = Environment(loader=FileSystemLoader(searchpath='.'))
+    ret = {}
+    for fn in templates:
+        template = env.get_template(fn)
+        ret[fn] = template.render(**namespace)
+    return ret
+
+
+def render_templates(templates, namespace):
+    return list(map(methodcaller('render', **namespace), templates))
+
+
 def work(args, setup):
     basic_cmdargs = setup['executable'] + setup['cmdargs']
 
@@ -74,26 +96,23 @@ def work(args, setup):
     results = []
 
     for tp in product(*(l for _, l in setup['parameters'].items())):
-        namespace = dict(zip(setup['parameters'], tp))
-        for name, expr in setup['dependencies'].items():
-            namespace[name] = eval(expr, {}, namespace)
+        namespace = build_namespace(setup, tp)
 
-        templates = {}
-        for fn in setup['templates']:
-            with open(fn, 'r') as f:
-                data = f.read()
-            templates[fn] = interpolate_vars(data, namespace)
+        templates = render_templates(setup['templates'], namespace)
+        copy_files = render_templates(setup['files'], namespace)
+        cmdargs = render_templates(basic_cmdargs, namespace)
+
+        template_data = render_files(templates, namespace)
 
         with tempfile.TemporaryDirectory() as path:
-            for fn, data in templates.items():
+            for fn, data in template_data.items():
                 with open(join(path, fn), 'w') as f:
                     f.write(data)
-            for fn in setup['files']:
+            for fn in copy_files:
                 shutil.copy(fn, join(path, fn))
 
             print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
                                          for var in setup['parameters']) + ' ...')
-            cmdargs = [interpolate_vars(arg, namespace) for arg in basic_cmdargs]
             stdout = subprocess.check_output(cmdargs, cwd=path).decode()
 
             result = {}
