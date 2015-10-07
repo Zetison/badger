@@ -1,0 +1,7 @@
+templates: template.temp
+executable: cat
+cmdargs: template.temp
+parameters:
+  alpha: [a, b, c]
+parse:
+  - !!str '(?P<out>.+)'
