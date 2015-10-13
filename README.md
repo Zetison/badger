@@ -6,7 +6,9 @@ A simple batch runner tool. (BATCH runnER)
 
 ## Usage
 
-    badger.py [-h] [-o OUTPUT] [-f FORMAT] file
+```sh
+$ badger.py [-h] [-o OUTPUT] [-f FORMAT] file
+```
 
 Supported formats are `yaml` and `py`. If the format is not specified, it is
 determined from the output extension, which is `output.yaml` by default.
@@ -70,26 +72,28 @@ combination.
 Note the use of `!!str` and single quotes to avoid miscellaneous string
 behaviour that makes writing regexps difficult.
 
-    templates: file.inp
-    files: file.dat
-    executable: /path/to/binary
-    cmdargs: -2D -mixed file.inp
-    parameters:
-      degree: [1, 2, 3]
-      elements: [8, 16, 32]
-      timestep: [0.1, 0.05, 0.025]
-    dependencies:
-      raiseorder: degree - 1
-      refineu: elements//8 - 1
-      refinev: elements - 1
-      endtime: 10
-    parse:
-      - !!str 'Relative \|p-p\^h\|_l2 : (?P<p_rel_l2>[^\s]+)'
-      - !!str 'Total time\s+\|\s+(?P<cpu_time>[^\s]+)\s+\|\s+(?P<wall_time>[^\s]+)'
-    types:
-      p_rel_l2: float
-      cpu_time: float
-      wall_time: float
+```yaml
+templates: file.inp
+files: file.dat
+executable: /path/to/binary
+cmdargs: -2D -mixed file.inp
+parameters:
+  degree: [1, 2, 3]
+  elements: [8, 16, 32]
+  timestep: [0.1, 0.05, 0.025]
+dependencies:
+  raiseorder: degree - 1
+  refineu: elements//8 - 1
+  refinev: elements - 1
+  endtime: 10
+parse:
+  - !!str 'Relative \|p-p\^h\|_l2 : (?P<p_rel_l2>[^\s]+)'
+  - !!str 'Total time\s+\|\s+(?P<cpu_time>[^\s]+)\s+\|\s+(?P<wall_time>[^\s]+)'
+types:
+  p_rel_l2: float
+  cpu_time: float
+  wall_time: float
+```
 
 ## Output
 
