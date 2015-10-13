@@ -2,7 +2,10 @@ from nose.tools import raises, assert_raises
 from collections import OrderedDict
 from operator import methodcaller
 
+import sys
+
 from badger import input
+from tests.utils import no_stderr
 
 
 class TestArgs:
@@ -31,14 +34,16 @@ class TestArgs:
         assert args.format == 'yaml'
 
     def test_incorrect_format(self):
-        with assert_raises(SystemExit):
-            input.parse_args(['-o', 'foo', '-f', 'baz', 'bar'])
-        with assert_raises(SystemExit):
-            input.parse_args(['-o', 'foo.baz', 'bar'])
+        with no_stderr():
+            with assert_raises(SystemExit):
+                input.parse_args(['-o', 'foo', '-f', 'baz', 'bar'])
+            with assert_raises(SystemExit):
+                input.parse_args(['-o', 'foo.baz', 'bar'])
 
     @raises(SystemExit)
     def test_no_file(self):
-        input.parse_args([])
+        with no_stderr():
+            input.parse_args([])
 
 
 class TestSetup:
