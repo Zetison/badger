@@ -13,7 +13,13 @@ determined from the output extension, which is `output.yaml` by default.
 
 ## Dependencies
 
-Python 3 and PyYAML.
+Python 3.3 or later, PyYAML and Jinja2.
+
+To install the dependencies with `pip`,
+
+```sh
+$ pip install -r requirements.txt
+```
 
 ## Configuration file
 
