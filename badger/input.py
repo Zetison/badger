@@ -58,11 +58,7 @@ def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
     return yaml.load(stream, OrderedLoader)
 
 
-def load_setup(fn):
-    with open(fn, 'r') as f:
-        setup = ordered_load(f, yaml.SafeLoader)
-    setup = setup or {}
-
+def treat_setup(setup):
     coerce_list(setup, 'templates')
     coerce_list(setup, 'files')
     coerce_list(setup, 'cmdargs', split=shlex.split)
@@ -80,11 +76,19 @@ def load_setup(fn):
     for key in setup['dependencies']:
         setup['dependencies'][key] = str(setup['dependencies'][key])
 
+
+def load_setup(fn):
+    with open(fn, 'r') as f:
+        setup = ordered_load(f, yaml.SafeLoader)
+    setup = setup or {}
+
+    treat_setup(setup)
+
     return setup
 
 
 def empty_setup(executable='', **kwargs):
-    ret = {
+    setup = {
         'templates': [],
         'files': [],
         'executable': executable,
@@ -95,5 +99,6 @@ def empty_setup(executable='', **kwargs):
         'types': OrderedDict(),
         }
 
-    ret.update(kwargs)
-    return ret
+    setup.update(kwargs)
+    treat_setup(setup)
+    return setup

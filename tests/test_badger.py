@@ -6,7 +6,7 @@ class TestCall:
     def test(self):
         setup = input.empty_setup(
             ['echo'],
-            cmdargs=['a=$alpha', 'b=$bravo', 'c=$charlie'],
+            cmdargs=['a=$alpha$', 'b=$bravo$', 'c=$charlie$'],
             parameters=OrderedDict([('alpha', [2, 4]), ('bravo', ['a', 'b'])]),
             dependencies=OrderedDict([('charlie', 'alpha**2')]),
             parse=['(?P<out>.+)'],
