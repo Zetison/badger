@@ -44,10 +44,10 @@ class TestArgs:
 class TestSetup:
     @raises(KeyError)
     def test_empty(self):
-        input.load_setup('test_input_empty.yaml')
+        input.load_setup('tests/test_input_empty.yaml')
 
     def test_minimal(self):
-        setup = input.load_setup('test_input_minimal.yaml')
+        setup = input.load_setup('tests/test_input_minimal.yaml')
         for k in ['executable']:
             setup[k] = list(map(methodcaller('render'), setup[k]))
 
@@ -58,7 +58,7 @@ class TestSetup:
             assert setup[k] == {}
 
     def test_basic(self):
-        setup = input.load_setup('test_input_basic.yaml')
+        setup = input.load_setup('tests/test_input_basic.yaml')
         for k in ['templates', 'files', 'executable', 'cmdargs']:
             setup[k] = list(map(methodcaller('render'), setup[k]))
 

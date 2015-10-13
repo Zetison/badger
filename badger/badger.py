@@ -45,8 +45,9 @@ import re
 
 from socket import gethostname
 from datetime import datetime
-from itertools import product
-from os.path import join
+from itertools import chain, product
+from os.path import join, exists, dirname
+from os import makedirs
 from operator import methodcaller
 from jinja2 import Environment, FileSystemLoader
 
@@ -89,6 +90,11 @@ def render_templates(templates, namespace):
     return list(map(methodcaller('render', **namespace), templates))
 
 
+def ensure_path_exists(filename):
+    if not exists(dirname(filename)):
+        makedirs(dirname(filename))
+
+
 def work(args, setup):
     basic_cmdargs = setup['executable'] + setup['cmdargs']
 
@@ -105,6 +111,8 @@ def work(args, setup):
         template_data = render_files(templates, namespace)
 
         with tempfile.TemporaryDirectory() as path:
+            for fn in chain(template_data, copy_files):
+                ensure_path_exists(join(path, fn))
             for fn, data in template_data.items():
                 with open(join(path, fn), 'w') as f:
                     f.write(data)

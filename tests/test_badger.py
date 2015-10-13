@@ -22,8 +22,8 @@ class TestCall:
     def test_temp(self):
         setup = input.empty_setup(
             ['cat'],
-            cmdargs=['template.temp'],
-            templates=['template.temp'],
+            cmdargs=['tests/template.temp'],
+            templates=['tests/template.temp'],
             parameters=OrderedDict([('alpha', ['a', 'b', 'c']), ('bravo', [1, 2, 3])]),
             parse=['(?P<out>.+)']
             )
