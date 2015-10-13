@@ -35,13 +35,22 @@ present.
 
 ## Behaviour
 
-For each tuple of parameters, the dependent variables are computed.
+For each tuple of parameters, the dependent variables are computed. The values
+of these variables are then substituted in the template files. The templates
+follow the standard [Jinja2](http://jinja.pocoo.org/docs/dev/) format, whereby
+strings of the form `{{ varname }}` will be substituted with the value of the
+variable `varname`. See the [Jinja2](http://jinja.pocoo.org/docs/dev/templates/)
+documentation for details.
 
-Then, in each template file and each command-line parameter, the variables
-`$var` are substituted with the actual value of `var`.
+Template substitution in the executable and command-line arguments is also
+supported, but the syntax is `$varname$`.
 
 The actual computation is performed in a temporary directory which is
 automatically deleted.
+
+Badger records the match for each capture group in the _last_ match of each
+regular expression on the standard output, and coerces it to the given type, if
+applicable.
 
 ## Example
 
@@ -82,5 +91,6 @@ quickly).
 
 ## TODO
 
-- More output formats (e.g. Matlab, CSV, pure text).
-- Easy access to commonly used regexps.
+Please check out the
+[list of issues](https://github.com/TheBB/badger/issues?q=is:open+is:issue+label:"feature+request")
+labeled 'feature request'.
