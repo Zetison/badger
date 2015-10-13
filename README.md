@@ -1,5 +1,7 @@
 # Badger
 
+[![Build status](https://travis-ci.org/TheBB/badger.svg)](https://travis-ci.org/TheBB/badger)
+
 A simple batch runner tool. (BATCH runnER)
 
 ## Usage
