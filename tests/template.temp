@@ -1,1 +1,1 @@
-Hi there, {{ alpha }}!
+a={{ alpha }} b={{ bravo }}
