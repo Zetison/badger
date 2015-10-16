@@ -7,7 +7,7 @@ A simple batch runner tool. (BATCH runnER)
 ## Usage
 
 ```sh
-$ badger.py [-h] [-o OUTPUT] [-f FORMAT] file
+$ badger [-h] [-o OUTPUT] [-f {yaml,py}] [-d] [-v {0,1,2,3,4}] [-l {0,1,2,3,4}] file
 ```
 
 Supported formats are `yaml` and `py`. If the format is not specified, it is
@@ -61,6 +61,23 @@ automatically deleted.
 Badger records the match for each capture group in the _last_ match of each
 regular expression on the standard output, and coerces it to the given type, if
 applicable.
+
+## Command-line arguments
+
+- `-o` `--output`: Set the output file (and format)
+- `-f` `--format`: Set or override the output format
+- `-d` `--dry`: Run 'dry', don't actually run the jobs
+- `-v` `--verbosity`: Set the verbosity for standard output.
+- `-l` `--logverbosity`: Set the verbosity for standard output.
+
+Verbosity levels:
+
+- 0: Nothing.
+- 1: Notifications about jobs that run, which results are captured and whether
+  the return code signals a failure.
+- 2: Print stderr from jobs.
+- 3: Print rendered templates.
+- 4: Print stdout from jobs.
 
 ## Example
 
