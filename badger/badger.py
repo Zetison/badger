@@ -98,6 +98,7 @@ def ensure_path_exists(filename):
 def work(args, setup):
     basic_cmdargs = setup['executable'] + setup['cmdargs']
 
+    print(setup['parse'])
     regexps = [re.compile(r) for r in setup['parse']]
     results = []
 
