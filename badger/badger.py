@@ -97,9 +97,10 @@ def ensure_path_exists(filename):
 
 
 def run_case(cmdargs, path, regexps, types):
-    out = subprocess.run(cmdargs, cwd=path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout = out.stdout.decode()
-    stderr = out.stderr.decode()
+    p = subprocess.Popen(cmdargs, cwd=path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    stdout = stdout.decode()
+    stderr = stderr.decode()
 
     result = {}
     for r in regexps:
@@ -109,7 +110,7 @@ def run_case(cmdargs, path, regexps, types):
         if m:
             result.update(m.groupdict())
     coerce_types(result, types)
-    return result, stdout, stderr, out.returncode
+    return result, stdout, stderr, p.returncode
 
 
 def work(args, setup):
