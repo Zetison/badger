@@ -66,6 +66,8 @@ def parse_args(input=None):
                         help='The output file')
     parser.add_argument('-f', '--format', required=False, default=None,
                         choices=output.FORMATS, help='The output format')
+    parser.add_argument('-d', '--dry', required=False, default=False,
+                        action='store_true', help='Dry run')
     parser.add_argument('file', help='Configuration file for the batch job')
     args = parser.parse_args(input)
 
@@ -74,7 +76,8 @@ def parse_args(input=None):
             args.format = args.output.split('.')[-1]
             assert args.format in output.FORMATS
         except (AssertionError, IndexError):
-            print('Unable to determine output format from filename "{}"'.format(args.output))
+            print('Unable to determine output format from filename "{}"'.format(args.output),
+                  file=sys.stderr)
             sys.exit(1)
 
     return args

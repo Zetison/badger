@@ -39,6 +39,7 @@
 # written agreement between you and SINTEF ICT.
 
 import tempfile
+import shlex
 import shutil
 import subprocess
 import re
@@ -95,6 +96,22 @@ def ensure_path_exists(filename):
         makedirs(dirname(filename))
 
 
+def run_case(cmdargs, path, regexps, types):
+    out = subprocess.run(cmdargs, cwd=path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = out.stdout.decode()
+    stderr = out.stderr.decode()
+
+    result = {}
+    for r in regexps:
+        m = None
+        for m in r.finditer(stdout):
+            pass
+        if m:
+            result.update(m.groupdict())
+    coerce_types(result, types)
+    return result, stdout, stderr, out.returncode
+
+
 def work(args, setup):
     basic_cmdargs = setup['executable'] + setup['cmdargs']
 
@@ -121,32 +138,26 @@ def work(args, setup):
 
             print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
                                          for var in setup['parameters']) + ' ...')
-            stdout = subprocess.check_output(cmdargs, cwd=path).decode()
+            if args.dry:
+                print('  ' + ' '.join(shlex.quote(a) for a in cmdargs))
+            else:
+                result, stdout, stderr, retcode = run_case(cmdargs, path, regexps, setup['types'])
+                results.append(result)
+                print('  ' + ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
 
-            result = {}
-            for r in regexps:
-                m = None
-                for m in r.finditer(stdout):
-                    pass
-                if m:
-                    result.update(m.groupdict())
-            coerce_types(result, setup['types'])
-            results.append(result)
+    if not args.dry:
+        all_output = set().union(*results)
+        for out in all_output:
+            if out not in setup['types']:
+                setup['types']['out'] = 'str'
 
-            print('  ' + ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
-
-    all_output = set().union(*results)
-    for out in all_output:
-        if out not in setup['types']:
-            setup['types']['out'] = 'str'
-
-    return {
-        'metadata': {
-            'hostname': gethostname(),
-            'time': str(datetime.now()),
-        },
-        'parameters': [{'name': param, 'values': values}
-                       for param, values in setup['parameters'].items()],
-        'results': {output: [result.get(output) for result in results]
-                    for output in all_output},
-    }
+        return {
+            'metadata': {
+                'hostname': gethostname(),
+                'time': str(datetime.now()),
+            },
+            'parameters': [{'name': param, 'values': values}
+                           for param, values in setup['parameters'].items()],
+            'results': {output: [result.get(output) for result in results]
+                        for output in all_output},
+        }

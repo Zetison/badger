@@ -45,4 +45,5 @@ if __name__ == '__main__':
     setup = input.load_setup(args.file)
     final = badger.work(args, setup)
 
-    getattr(output, args.format)(final, setup['types'], args.output)
+    if final:
+        getattr(output, args.format)(final, setup['types'], args.output)
