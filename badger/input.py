@@ -70,9 +70,9 @@ def parse_args(input=None):
     parser.add_argument('-d', '--dry', required=False, default=False,
                         action='store_true', help='Dry run')
     parser.add_argument('-v', '--verbosity', required=False, default=1, type=int,
-                        choices=range(0, 5), help='Verbosity level')
+                        choices=range(0, 5), help='Verbosity level for stdout')
     parser.add_argument('-l', '--logverbosity', required=False, default=3, type=int,
-                        choices=range(0, 5), help='Verbosity level')
+                        choices=range(0, 5), help='Verbosity level for log file')
     parser.add_argument('file', help='Configuration file for the batch job')
     args = parser.parse_args(input)
 
