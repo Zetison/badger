@@ -45,6 +45,7 @@ from collections import OrderedDict
 from jinja2 import Template
 
 import badger.output as output
+import badger.log as log
 
 
 def coerce_list(dictionary, key, split=None, required=False):
@@ -68,6 +69,10 @@ def parse_args(input=None):
                         choices=output.FORMATS, help='The output format')
     parser.add_argument('-d', '--dry', required=False, default=False,
                         action='store_true', help='Dry run')
+    parser.add_argument('-v', '--verbosity', required=False, default=1, type=int,
+                        choices=range(0, 5), help='Verbosity level')
+    parser.add_argument('-l', '--logverbosity', required=False, default=3, type=int,
+                        choices=range(0, 5), help='Verbosity level')
     parser.add_argument('file', help='Configuration file for the batch job')
     args = parser.parse_args(input)
 
@@ -79,6 +84,12 @@ def parse_args(input=None):
             print('Unable to determine output format from filename "{}"'.format(args.output),
                   file=sys.stderr)
             sys.exit(1)
+
+    log.stdout_verbosity = args.verbosity
+    log.log_verbosity = args.logverbosity
+    log.log_file = args.file + '.log'
+    if args.logverbosity > 1:
+        with open(log.log_file, 'w') as f: pass
 
     return args
 

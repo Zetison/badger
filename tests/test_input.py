@@ -10,25 +10,25 @@ from tests.utils import no_stderr
 
 class TestArgs:
     def test_file(self):
-        args = input.parse_args(['blergh'])
+        args = input.parse_args(['-l0', 'blergh'])
         assert args.file == 'blergh'
         assert args.output == 'output.yaml'
         assert args.format == 'yaml'
 
     def test_output(self):
-        args = input.parse_args(['-o', 'test.py', 'argh'])
+        args = input.parse_args(['-l0', '-o', 'test.py', 'argh'])
         assert args.file == 'argh'
         assert args.output == 'test.py'
         assert args.format == 'py'
 
     def test_format(self):
-        args = input.parse_args(['-f', 'py', 'yoink'])
+        args = input.parse_args(['-l0', '-f', 'py', 'yoink'])
         assert args.file == 'yoink'
         assert args.output == 'output.yaml'
         assert args.format == 'py'
 
     def test_all(self):
-        args = input.parse_args(['-o', 'foo', '-f', 'yaml', 'bar'])
+        args = input.parse_args(['-l0', '-o', 'foo', '-f', 'yaml', 'bar'])
         assert args.file == 'bar'
         assert args.output == 'foo'
         assert args.format == 'yaml'

@@ -50,7 +50,7 @@ from os import makedirs
 from operator import methodcaller
 from jinja2 import Environment, FileSystemLoader
 
-from badger import output, input
+from badger import output, input, log
 
 
 def interpolate_vars(string, namespace):
@@ -135,14 +135,20 @@ def work(args, setup):
             for fn in copy_files:
                 shutil.copy(fn, join(path, fn))
 
-            print('Running ' + ', '.join('{}={}'.format(var, namespace[var])
-                                         for var in setup['parameters']) + ' ...')
+            log.log('running', 'Running ' + ', '.join('{}={}'.format(var, namespace[var])
+                                                      for var in setup['parameters']) + ' ...')
+            for fn, data in template_data.items():
+                log.log('templates', data, 'Template: {}'.format(fn))
             if args.dry:
-                print('  ' + ' '.join(shlex.quote(a) for a in cmdargs))
+                log.log('results', ' '.join(shlex.quote(a) for a in cmdargs))
             else:
                 result, stdout, stderr, retcode = run_case(cmdargs, path, regexps, setup['types'])
                 results.append(result)
-                print('  ' + ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
+                log.log('stdout', stdout, 'Captured stdout')
+                log.log('stderr', stderr, 'Captured stderr')
+                log.log('results', ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
+                if retcode != 0:
+                    log.log('retcode', '!! Process exited with code {}'.format(retcode))
 
     if not args.dry:
         all_output = set().union(*results)

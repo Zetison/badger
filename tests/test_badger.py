@@ -11,7 +11,7 @@ class TestCall:
             dependencies=OrderedDict([('charlie', 'alpha**2')]),
             parse=['(?P<out>.+)']
             )
-        stuff = badger.work(input.parse_args(['foo']), setup)
+        stuff = badger.work(input.parse_args(['-l0', 'foo']), setup)
         assert stuff['results']['out'] == [
             'a=2 b=a c=4',
             'a=2 b=b c=4',
@@ -27,7 +27,7 @@ class TestCall:
             parameters=OrderedDict([('alpha', ['a', 'b', 'c']), ('bravo', [1, 2, 3])]),
             parse=['(?P<out>.+)']
             )
-        stuff = badger.work(input.parse_args(['foo']), setup)
+        stuff = badger.work(input.parse_args(['-l0', 'foo']), setup)
         assert stuff['results']['out'] == [
             'a=a b=1', 'a=a b=2', 'a=a b=3',
             'a=b b=1', 'a=b b=2', 'a=b b=3',
