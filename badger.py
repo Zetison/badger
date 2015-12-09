@@ -39,10 +39,14 @@
 # written agreement between you and SINTEF ICT.
 
 from badger import badger, input, output
+from os.path import dirname
+from os import makedirs
 
 if __name__ == '__main__':
     args = input.parse_args()
     setup = input.load_setup(args.file)
+
+    badger.ensure_path_exists(args.output)
     final = badger.work(args, setup)
 
     if final:
