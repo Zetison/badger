@@ -152,7 +152,7 @@ def work(args, setup):
                     log.log('retcode', '!! Process exited with code {}'.format(retcode))
                 else:
                     for fn in capture_files:
-                        shutil.copy(fn, join(dirname(args.output), fn))
+                        shutil.copy(join(path, fn), join(dirname(args.output), fn))
 
     if not args.dry:
         all_output = set().union(*results)
