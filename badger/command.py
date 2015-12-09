@@ -36,45 +36,33 @@
 # This file may be used in accordance with the terms contained in a
 # written agreement between you and SINTEF ICT.
 
-from yaml import dump as yaml_dump
+import re
+import shlex
+import shutil
+
+from os.path import join
+
+from jinja2 import Template
 
 
-FORMATS = ['yaml', 'py']
+class Command:
 
+    def __init__(self, cmd, stdout=[], files=[]):
+        self.args = [Template(a) for a in shlex.split(cmd)]
+        self.stdout = [Template(s) for s in stdout]
+        self.files = [Template(f) for f in files]
 
-def yaml(data, types, fn):
-    with open(fn, 'w') as f:
-        yaml_dump(data, f, default_flow_style=False)
+    def capture_stdout(self, stdout, namespace):
+        results = {}
+        for regexp in self.stdout:
+            r = re.compile(regexp.render(**namespace), re.MULTILINE)
+            matches = list(r.finditer(stdout))
+            for m in matches:
+                for g, v in m.groupdict().items():
+                    results.setdefault(g, []).append(v)
+        return results
 
-
-def py(data, types, fn):
-    code = """from numpy import array, zeros, object_
-
-metadata = {'hostname': '%(hostname)s',
-            'time': '%(time)s'}
-""" % {'hostname': data['metadata']['hostname'],
-       'time': data['metadata']['time']}
-
-    def fmt(v):
-        if isinstance(v, str):
-            return "'%s'" % v
-        elif isinstance(v, list):
-            return '[{}]'.format(', '.join(fmt(u) for u in v))
-        return str(v)
-
-    size = []
-    for p in data['parameters']:
-        code += '{} = array([{}])\n'.format(p['name'], ', '.join(fmt(d) for d in p['values']))
-        size.append(len(p['values']))
-    size = '({},)'.format(', '.join(str(s) for s in size))
-
-    for k, vals in data['results'].items():
-        dtype = types[k]
-        if isinstance(dtype, list):
-            dtype = 'object_'
-        code += '{} = zeros({}, dtype={})\n'.format(k, size, dtype)
-        for i, v in enumerate(vals):
-            code += '{}.flat[{}] = {}\n'.format(k, i, fmt(v))
-
-    with open(fn, 'w') as f:
-        f.write(code)
+    def capture_files(self, source, target, namespace):
+        for fn in self.files:
+            fn = fn.render(**namespace)
+            shutil.copy(join(source, fn), join(target, fn))

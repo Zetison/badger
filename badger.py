@@ -22,12 +22,12 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public
-# License along with GoTools. If not, see
+# License along with BADGER. If not, see
 # <http://www.gnu.org/licenses/>.
 #
 # In accordance with Section 7(b) of the GNU Affero General Public
 # License, a covered work must retain the producer line in every data
-# file that is created or manipulated using GoTools.
+# file that is created or manipulated using BADGER.
 #
 # Other Usage
 # You can be released from the requirements of the license by purchasing
@@ -39,15 +39,16 @@
 # written agreement between you and SINTEF ICT.
 
 from badger import badger, input, output
+from badger.utils import *
 from os.path import dirname
 from os import makedirs
 
 if __name__ == '__main__':
     args = input.parse_args()
-    setup = input.load_setup(args.file)
+    setup = input.Setup.from_file(args.file)
 
-    badger.ensure_path_exists(args.output)
+    ensure_path_exists(args.output)
     final = badger.work(args, setup)
 
     if final:
-        getattr(output, args.format)(final, setup['types'], args.output)
+        getattr(output, args.format)(final, setup.types, args.output)

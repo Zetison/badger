@@ -20,12 +20,12 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public
-# License along with GoTools. If not, see
+# License along with BADGER. If not, see
 # <http://www.gnu.org/licenses/>.
 #
 # In accordance with Section 7(b) of the GNU Affero General Public
 # License, a covered work must retain the producer line in every data
-# file that is created or manipulated using GoTools.
+# file that is created or manipulated using BADGER.
 #
 # Other Usage
 # You can be released from the requirements of the license by purchasing
@@ -37,29 +37,25 @@
 # written agreement between you and SINTEF ICT.
 
 import argparse
-import shlex
+import re
 import sys
 import yaml
 
-from os.path import dirname, join
-from collections import OrderedDict
+from os.path import dirname
+from collections import OrderedDict, namedtuple
 from jinja2 import Template
 
+from badger.command import Command
 import badger.output as output
 import badger.log as log
+from badger.utils import *
 
 
-def coerce_list(dictionary, key, split=None, required=False):
+def coerce_list_elem(dictionary, key, split=None, required=False):
     if not required:
         if key not in dictionary:
             dictionary[key] = []
-    if isinstance(dictionary[key], str):
-        if isinstance(split, str):
-            dictionary[key] = dictionary[key].split(split)
-        elif split:
-            dictionary[key] = split(dictionary[key])
-        else:
-            dictionary[key] = [dictionary[key]]
+    dictionary[key] = coerce_list(dictionary[key], split=split)
 
 
 def parse_args(input=None):
@@ -88,7 +84,7 @@ def parse_args(input=None):
 
     log.stdout_verbosity = args.verbosity
     log.log_verbosity = args.logverbosity
-    log.log_file = join(dirname(args.output), args.file + '.log')
+    log.log_file = args.file + '.log'
     if args.logverbosity > 1:
         with open(log.log_file, 'w') as f: pass
 
@@ -111,24 +107,54 @@ def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
     return yaml.load(stream, OrderedLoader)
 
 
+class Setup:
+
+    def __init__(self, setup):
+        self.commands = []
+        for cmd in setup['commands']:
+            for key in ['stdout', 'files']:
+                if key not in cmd:
+                    cmd[key] = []
+            self.commands.append(Command(cmd['cmd'], cmd['stdout'], cmd['files']))
+
+        self.parameters = setup.get('parameters', {})
+        self.dependencies = setup.get('dependencies', {})
+        self.templates = [Template(t) for t in setup.get('templates', [])]
+        self.files = [Template(t) for t in setup.get('files', [])]
+        self.target_dir = Template(setup.get('target_dir', '{{case_number}}'))
+        self.types = setup.get('types', {})
+
+    @classmethod
+    def from_file(cls, fn):
+        with open(fn, 'r') as f:
+            setup = ordered_load(f, yaml.SafeLoader)
+        return cls(setup or {})
+
+
 def treat_setup(setup):
-    coerce_list(setup, 'templates')
-    coerce_list(setup, 'files')
-    coerce_list(setup, 'cmdargs', split=shlex.split)
-    coerce_list(setup, 'executable', split=shlex.split, required=True)
-    coerce_list(setup, 'parse')
-    coerce_list(setup, 'capture')
+    coerce_list_elem(setup, 'templates')
+    coerce_list_elem(setup, 'files')
+    coerce_list_elem(setup, 'cmdargs', split=shlex.split)
+    coerce_list_elem(setup, 'executable', split=shlex.split, required=True)
+    coerce_list_elem(setup, 'parse')
     for key in ['dependencies', 'types', 'parameters']:
         if key not in setup:
             setup[key] = {}
+    if 'capture' not in setup:
+        setup['capture'] = []
+    if 'target_dir' not in setup:
+        setup['target_dir'] = '$case_number$'
 
     kwargs = {'variable_start_string': '$',
               'variable_end_string': '$'}
-    for k in ['templates', 'files', 'executable', 'cmdargs', 'capture']:
+    for k in ['templates', 'files', 'executable', 'cmdargs']:
         setup[k] = [Template(v, **kwargs) for v in setup[k]]
+    setup['target_dir'] = Template(setup['target_dir'], **kwargs)
 
     for key in setup['dependencies']:
         setup['dependencies'][key] = str(setup['dependencies'][key])
+
+    setup['capture'] = Capture(setup['capture'], setup['types'])
 
 
 def load_setup(fn):
@@ -151,6 +177,7 @@ def empty_setup(executable='', **kwargs):
         'dependencies': OrderedDict(),
         'parse': [],
         'types': OrderedDict(),
+        'capture': Capture(),
         }
 
     setup.update(kwargs)

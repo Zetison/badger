@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (C) 2015 SINTEF ICT,
 # Applied Mathematics, Norway.
 #
@@ -36,45 +38,45 @@
 # This file may be used in accordance with the terms contained in a
 # written agreement between you and SINTEF ICT.
 
-from yaml import dump as yaml_dump
+import subprocess
+from os.path import exists, dirname
+from os import makedirs
 
 
-FORMATS = ['yaml', 'py']
+def coerce_list(value, split=None, required=False):
+    if isinstance(value, list):
+        return value
+    elif isinstance(value, str):
+        if isinstance(split, str):
+            return value.split(split)
+        elif split:
+            return split(value)
+    return [value]
 
 
-def yaml(data, types, fn):
-    with open(fn, 'w') as f:
-        yaml_dump(data, f, default_flow_style=False)
+def coerce_types(dictionary, types):
+    type_map = {'float': float, 'str': str, 'int': int, 'bool': bool}
+    for key, val in dictionary.items():
+        if key in types:
+            tp = types[key]
+            if isinstance(tp, str):
+                dictionary[key] = type_map[tp](val[-1])
+            elif isinstance(tp, list):
+                func = type_map[tp[0]]
+                dictionary[key] = [func(v) for v in val]
 
 
-def py(data, types, fn):
-    code = """from numpy import array, zeros, object_
+def run_process(args, path):
+    p = subprocess.Popen(args, cwd=path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    stdout = stdout.decode()
+    stderr = stderr.decode()
 
-metadata = {'hostname': '%(hostname)s',
-            'time': '%(time)s'}
-""" % {'hostname': data['metadata']['hostname'],
-       'time': data['metadata']['time']}
+    return stdout, stderr, p.returncode
 
-    def fmt(v):
-        if isinstance(v, str):
-            return "'%s'" % v
-        elif isinstance(v, list):
-            return '[{}]'.format(', '.join(fmt(u) for u in v))
-        return str(v)
 
-    size = []
-    for p in data['parameters']:
-        code += '{} = array([{}])\n'.format(p['name'], ', '.join(fmt(d) for d in p['values']))
-        size.append(len(p['values']))
-    size = '({},)'.format(', '.join(str(s) for s in size))
-
-    for k, vals in data['results'].items():
-        dtype = types[k]
-        if isinstance(dtype, list):
-            dtype = 'object_'
-        code += '{} = zeros({}, dtype={})\n'.format(k, size, dtype)
-        for i, v in enumerate(vals):
-            code += '{}.flat[{}] = {}\n'.format(k, i, fmt(v))
-
-    with open(fn, 'w') as f:
-        f.write(code)
+def ensure_path_exists(filename, file=True):
+    if file:
+        filename = dirname(filename)
+    if filename and not exists(filename):
+        makedirs(filename)
