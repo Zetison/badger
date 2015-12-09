@@ -122,6 +122,7 @@ def work(args, setup):
 
         templates = render_templates(setup['templates'], namespace)
         copy_files = render_templates(setup['files'], namespace)
+        capture_files = render_templates(setup['capture'], namespace)
         cmdargs = render_templates(basic_cmdargs, namespace)
 
         template_data = render_files(templates, namespace)
@@ -149,6 +150,9 @@ def work(args, setup):
                 log.log('results', ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
                 if retcode != 0:
                     log.log('retcode', '!! Process exited with code {}'.format(retcode))
+                else:
+                    for fn in capture_files:
+                        shutil.copy(fn, join(dirname(args.output), fn))
 
     if not args.dry:
         all_output = set().union(*results)

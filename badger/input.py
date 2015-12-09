@@ -118,13 +118,14 @@ def treat_setup(setup):
     coerce_list(setup, 'cmdargs', split=shlex.split)
     coerce_list(setup, 'executable', split=shlex.split, required=True)
     coerce_list(setup, 'parse')
+    coerce_list(setup, 'capture')
     for key in ['dependencies', 'types', 'parameters']:
         if key not in setup:
             setup[key] = {}
 
     kwargs = {'variable_start_string': '$',
               'variable_end_string': '$'}
-    for k in ['templates', 'files', 'executable', 'cmdargs']:
+    for k in ['templates', 'files', 'executable', 'cmdargs', 'capture']:
         setup[k] = [Template(v, **kwargs) for v in setup[k]]
 
     for key in setup['dependencies']:
