@@ -41,6 +41,7 @@ import shlex
 import sys
 import yaml
 
+from os.path import dirname, join
 from collections import OrderedDict
 from jinja2 import Template
 
@@ -87,6 +88,7 @@ def parse_args(input=None):
 
     log.stdout_verbosity = args.verbosity
     log.log_verbosity = args.logverbosity
+    log.log_file = join(dirname(args.output), args.file + '.log')
     log.log_file = args.file + '.log'
     if args.logverbosity > 1:
         with open(log.log_file, 'w') as f: pass
