@@ -50,8 +50,8 @@ from os.path import join, dirname
 from operator import methodcaller
 from jinja2 import Environment, FileSystemLoader
 
-from badger import output, input, log
-from badger.utils import *
+from sett import output, input, log
+from sett.utils import *
 
 
 def interpolate_vars(string, namespace):

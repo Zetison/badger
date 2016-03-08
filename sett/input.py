@@ -45,10 +45,10 @@ from os.path import dirname
 from collections import OrderedDict, namedtuple
 from jinja2 import Template
 
-from badger.command import Command
-import badger.output as output
-import badger.log as log
-from badger.utils import *
+from sett.command import Command
+import sett.output as output
+import sett.log as log
+from sett.utils import *
 
 
 def coerce_list_elem(dictionary, key, split=None, required=False):

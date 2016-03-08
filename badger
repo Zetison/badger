@@ -38,8 +38,8 @@
 # This file may be used in accordance with the terms contained in a
 # written agreement between you and SINTEF ICT.
 
-from badger import badger, input, output
-from badger.utils import *
+from sett import badger, input, output
+from sett.utils import *
 from os.path import dirname
 from os import makedirs
 
