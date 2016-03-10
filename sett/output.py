@@ -20,12 +20,12 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public
-# License along with GoTools. If not, see
+# License along with BADGER. If not, see
 # <http://www.gnu.org/licenses/>.
 #
 # In accordance with Section 7(b) of the GNU Affero General Public
 # License, a covered work must retain the producer line in every data
-# file that is created or manipulated using GoTools.
+# file that is created or manipulated using BADGER.
 #
 # Other Usage
 # You can be released from the requirements of the license by purchasing
@@ -48,7 +48,7 @@ def yaml(data, types, fn):
 
 
 def py(data, types, fn):
-    code = """from numpy import array, zeros
+    code = """from numpy import array, zeros, object_
 
 metadata = {'hostname': '%(hostname)s',
             'time': '%(time)s'}
@@ -58,17 +58,23 @@ metadata = {'hostname': '%(hostname)s',
     def fmt(v):
         if isinstance(v, str):
             return "'%s'" % v
+        elif isinstance(v, list):
+            return '[{}]'.format(', '.join(fmt(u) for u in v))
         return str(v)
 
     size = []
     for p in data['parameters']:
         code += '{} = array([{}])\n'.format(p['name'], ', '.join(fmt(d) for d in p['values']))
         size.append(len(p['values']))
-    size = '({})'.format(', '.join(str(s) for s in size))
+    size = '({},)'.format(', '.join(str(s) for s in size))
 
     for k, vals in data['results'].items():
-        code += '{} = zeros({}, dtype={})\n'.format(k, size, types[k])
-        code += '{}.flat[:] = [{}]\n'.format(k, ', '.join(fmt(v) for v in vals))
+        dtype = types[k]
+        if isinstance(dtype, list):
+            dtype = 'object_'
+        code += '{} = zeros({}, dtype={})\n'.format(k, size, dtype)
+        for i, v in enumerate(vals):
+            code += '{}.flat[{}] = {}\n'.format(k, i, fmt(v))
 
     with open(fn, 'w') as f:
         f.write(code)

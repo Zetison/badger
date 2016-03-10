@@ -20,12 +20,12 @@
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public
-# License along with GoTools. If not, see
+# License along with BADGER. If not, see
 # <http://www.gnu.org/licenses/>.
 #
 # In accordance with Section 7(b) of the GNU Affero General Public
 # License, a covered work must retain the producer line in every data
-# file that is created or manipulated using GoTools.
+# file that is created or manipulated using BADGER.
 #
 # Other Usage
 # You can be released from the requirements of the license by purchasing
@@ -36,21 +36,22 @@
 # This file may be used in accordance with the terms contained in a
 # written agreement between you and SINTEF ICT.
 
-import tempfile
+import operator
 import shlex
 import shutil
 import subprocess
-import re
+import tempfile
 
+from functools import reduce
 from socket import gethostname
 from datetime import datetime
 from itertools import chain, product
-from os.path import join, exists, dirname
-from os import makedirs
+from os.path import join, dirname
 from operator import methodcaller
 from jinja2 import Environment, FileSystemLoader
 
-from badger import output, input, log
+from sett import output, input, log
+from sett.utils import *
 
 
 def interpolate_vars(string, namespace):
@@ -59,20 +60,13 @@ def interpolate_vars(string, namespace):
     return string
 
 
-def coerce_types(dictionary, types):
-    type_map = {'float': float,
-                'str': str,
-                'int': int,
-                'bool': bool}
-    for key, val in dictionary.items():
-        if key in types:
-            dictionary[key] = type_map[types[key]](val)
-
-
-def build_namespace(setup, parameters):
-    namespace = dict(zip(setup['parameters'], parameters))
-    for name, expr in setup['dependencies'].items():
-        namespace[name] = eval(expr, {}, namespace)
+def build_initial_namespace(setup, parameters):
+    namespace = dict(zip(setup.parameters, parameters))
+    for name, expr in setup.dependencies.items():
+        try:
+            namespace[name] = eval(expr, {}, namespace)
+        except (TypeError, SyntaxError):
+            namespace[name] = expr
     return namespace
 
 
@@ -89,43 +83,25 @@ def render_templates(templates, namespace):
     return list(map(methodcaller('render', **namespace), templates))
 
 
-def ensure_path_exists(filename):
-    if not exists(dirname(filename)):
-        makedirs(dirname(filename))
-
-
-def run_case(cmdargs, path, regexps, types):
-    p = subprocess.Popen(cmdargs, cwd=path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    stdout = stdout.decode()
-    stderr = stderr.decode()
-
-    result = {}
-    for r in regexps:
-        m = None
-        for m in r.finditer(stdout):
-            pass
-        if m:
-            result.update(m.groupdict())
-    coerce_types(result, types)
-    return result, stdout, stderr, p.returncode
-
-
 def work(args, setup):
-    basic_cmdargs = setup['executable'] + setup['cmdargs']
-
-    regexps = [re.compile(r) for r in setup['parse']]
     results = []
+    output_root = dirname(args.output)
+    num_cases = reduce(operator.mul, [len(vals) for vals in setup.parameters.values()], 1)
+    num = 1
 
-    for tp in product(*(l for _, l in setup['parameters'].items())):
-        namespace = build_namespace(setup, tp)
+    for tp in product(*(l for _, l in setup.parameters.items())):
+        namespace = build_initial_namespace(setup, tp)
+        namespace['case_number'] = num
 
-        templates = render_templates(setup['templates'], namespace)
-        copy_files = render_templates(setup['files'], namespace)
-        capture_files = render_templates(setup['capture'], namespace)
-        cmdargs = render_templates(basic_cmdargs, namespace)
-
+        templates = render_templates(setup.templates, namespace)
         template_data = render_files(templates, namespace)
+        copy_files = render_templates(setup.files, namespace)
+
+        if num_cases > 1:
+            target_dir = join(output_root, setup.target_dir.render(**namespace))
+        else:
+            target_dir = output_root
+        ensure_path_exists(target_dir, file=False)
 
         with tempfile.TemporaryDirectory() as path:
             for fn in chain(template_data, copy_files):
@@ -137,28 +113,34 @@ def work(args, setup):
                 shutil.copy(fn, join(path, fn))
 
             log.log('running', 'Running ' + ', '.join('{}={}'.format(var, namespace[var])
-                                                      for var in setup['parameters']) + ' ...')
+                                                      for var in setup.parameters) + ' ...')
             for fn, data in template_data.items():
                 log.log('templates', data, 'Template: {}'.format(fn))
-            if args.dry:
-                log.log('results', ' '.join(shlex.quote(a) for a in cmdargs))
-            else:
-                result, stdout, stderr, retcode = run_case(cmdargs, path, regexps, setup['types'])
-                results.append(result)
-                log.log('stdout', stdout, 'Captured stdout')
-                log.log('stderr', stderr, 'Captured stderr')
-                log.log('results', ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
-                if retcode != 0:
-                    log.log('retcode', '!! Process exited with code {}'.format(retcode))
+
+            result = {}
+            for cmd in setup.commands:
+                cmdargs = render_templates(cmd.args, namespace)
+                if args.dry:
+                    log.log('results', ' '.join(shlex.quote(a) for a in cmdargs))
                 else:
-                    for fn in capture_files:
-                        shutil.copy(join(path, fn), join(dirname(args.output), fn))
+                    stdout, stderr, retcode = run_process(cmdargs, path)
+                    cmd.capture_files(path, target_dir, namespace)
+                    result.update(cmd.capture_stdout(stdout, namespace))
+                    log.log('stdout', stdout, 'Captured stdout')
+                    log.log('stderr', stderr, 'Captured stderr')
+                    if retcode != 0:
+                        log.log('retcode', '!! Process exited with code {}'.format(retcode))
+            coerce_types(result, setup.types)
+            results.append(result)
+            log.log('results', ', '.join('{}={}'.format(t, result[t]) for t in sorted(result)))
+
+        num += 1
 
     if not args.dry:
         all_output = set().union(*results)
         for out in all_output:
-            if out not in setup['types']:
-                setup['types']['out'] = 'str'
+            if out not in setup.types:
+                setup.types['out'] = 'str'
 
         return {
             'metadata': {
@@ -166,7 +148,7 @@ def work(args, setup):
                 'time': str(datetime.now()),
             },
             'parameters': [{'name': param, 'values': values}
-                           for param, values in setup['parameters'].items()],
+                           for param, values in setup.parameters.items()],
             'results': {output: [result.get(output) for result in results]
                         for output in all_output},
         }
